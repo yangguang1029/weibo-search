@@ -10,14 +10,15 @@
 
 
 import baostock as bs
+import os
 import pandas as pd
 from datetime import date,timedelta
 
-YEAR = 2023
+YEAR = 2015
 
 
 def getData(code, start_date, end_date):
-    print('start getdata')
+    # print('start getdata')
     rs = bs.query_history_k_data_plus(code ,"date,code,pctChg", start_date, end_date, frequency="d")
     # print('query_history_k_data_plus respond error_code:'+rs.error_code)
     # print('query_history_k_data_plus respond  error_msg:'+rs.error_msg)
@@ -34,19 +35,19 @@ def getDataByMonth():
         end_date = (next_month - timedelta(days=next_month.day)).strftime('%Y-%m-%d')
         # 国证A指
         data1 = getData('sz.399317', start_date, end_date)
-        print('国证A指', data1)
+        # print('国证A指', data1)
         # 深证综指
         data2 = getData('sz.399106', start_date, end_date)
-        print('深证综指', data2)
+        # print('深证综指', data2)
         # 深证A指
         data3 = getData('sz.399107', start_date, end_date)
-        print('深证A指', data3)
+        # print('深证A指', data3)
         # 上证指数
         data4 = getData('sh.000001', start_date, end_date)
-        print('上证指数', data4)
+        # print('上证指数', data4)
         # 上证A指
         data5 = getData('sh.000002', start_date, end_date)
-        print('上证A指', data5)
+        # print('上证A指', data5)
         length = len(data1)
         if(len(data2) != length or len(data3) != length or len(data4) != length or len(data5) != length):
             print('数据长度不一致，请检查数据')
@@ -56,7 +57,10 @@ def getDataByMonth():
             d1 = data1[index]
             totalData.append([d1[0], d1[2], data2[index][2], data3[index][2], data4[index][2], data5[index][2]])
         result = pd.DataFrame(totalData)
-        result.to_csv('./data/'+start_date+ '.csv', index=False)
+        dirpath = './data/' + str(YEAR)
+        if(os.path.exists(dirpath) == False):
+            os.makedirs(dirpath)
+        result.to_csv(dirpath + os.sep + start_date+ '.csv', index=False)
     
 
 def main():
@@ -75,11 +79,4 @@ if __name__ == '__main__':
     main()
 
 
-
-
-
-# result = pd.DataFrame(data_list, columns=rs.fields)
-# # 结果集输出到csv文件
-# result.to_csv("./history_Index_k_data.csv", index=False)
-# print(result)
 
