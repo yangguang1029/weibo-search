@@ -2,7 +2,7 @@
 import os
 import re
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from urllib.parse import unquote
 
 import requests
@@ -33,16 +33,28 @@ class SearchSpider(scrapy.Spider):
     contain_type = util.convert_contain_type(settings.get('CONTAIN_TYPE'))
     regions = util.get_regions(settings.get('REGION'))
     base_url = 'https://s.weibo.com'
-    start_date = settings.get('START_DATE',
-                              datetime.now().strftime('%Y-%m-%d'))
-    end_date = settings.get('END_DATE', datetime.now().strftime('%Y-%m-%d'))
-    if util.str_to_time(start_date) > util.str_to_time(end_date):
-        sys.exit('settings.py配置错误，START_DATE值应早于或等于END_DATE值，请重新配置settings.py')
+    # start_date = settings.get('START_DATE',
+    #                           datetime.now().strftime('%Y-%m-%d'))
+    # end_date = settings.get('END_DATE', datetime.now().strftime('%Y-%m-%d'))
+    
     further_threshold = settings.get('FURTHER_THRESHOLD', 46)
     mongo_error = False
     pymongo_error = False
     mysql_error = False
     pymysql_error = False
+
+    def __init__(self, time=date.today().strftime('%Y%m'), **kwargs):
+        super().__init__(**kwargs)
+        year = int(time[:4])
+        month = int(time[4:])
+        self.start_date = date(year, month, 1).strftime('%Y-%m-%d')
+        next_month = date(year, month, 28) + timedelta(days=4)
+        self.end_date = (next_month - timedelta(days=next_month.day)).strftime('%Y-%m-%d')
+        
+        if util.str_to_time(self.start_date) > util.str_to_time(self.end_date):
+            sys.exit('START_DATE值应早于或等于END_DATE值，请重新配置')
+        print('guangy startDate ', self.start_date)
+        print('guangy endDate ', self.end_date)
 
     def start_requests(self):
         start_date = datetime.strptime(self.start_date, '%Y-%m-%d')
@@ -362,6 +374,10 @@ class SearchSpider(scrapy.Spider):
     def parse_weibo(self, response):
         """解析网页中的微博信息"""
         keyword = response.meta.get('keyword')
+        MIN_ACTIVE_COUNT = int(self.settings.get('MIN_ACTIVE_COUNT'))
+        MIN_CONTENT_LENGTH = int(self.settings.get('MIN_CONTENT_LENGTH'))
+        MAX_CONTENT_LENGTH = int(self.settings.get('MAX_CONTENT_LENGTH'))
+        
         for sel in response.xpath("//div[@class='card-wrap']"):
             info = sel.xpath(
                 "div[@class='card']/div[@class='card-feed']/div[@class='content']/div[@class='info']"
@@ -532,8 +548,14 @@ class SearchSpider(scrapy.Spider):
                     retweet['pics'] = pics
                     retweet['video_url'] = video_url
                     retweet['retweet_id'] = ''
-                    yield {'weibo': retweet, 'keyword': keyword}
+                    contentlen = len(retweet['text'])
+                    if(int(retweet['reposts_count'])+int(retweet['attitudes_count'])+int(retweet['comments_count']) > MIN_ACTIVE_COUNT and contentlen > MIN_CONTENT_LENGTH and contentlen < MAX_CONTENT_LENGTH):
+                        print(retweet)
+                        yield {'weibo': retweet, 'keyword': keyword}
                     weibo['retweet_id'] = retweet['id']
-                weibo["ip"] = self.get_ip(bid)
-                print(weibo)
-                yield {'weibo': weibo, 'keyword': keyword}
+                weibo["ip"] = ''
+                # print(weibo)
+                contentlen = len(weibo['text'])
+                if(int(weibo['reposts_count'])+int(weibo['attitudes_count'])+int(weibo['comments_count']) > MIN_ACTIVE_COUNT and contentlen > MIN_CONTENT_LENGTH and contentlen < MAX_CONTENT_LENGTH):
+                    print(weibo)
+                    yield {'weibo': weibo, 'keyword': keyword}
