@@ -2,14 +2,14 @@ import csv
 import os
 
 
-def writeCsv(time, data):
-    filePath = './结果文件/' + time + '.csv'
+def writeCsv(filePath, data):
     if not os.path.isfile(filePath):
         is_first_write = 1
     else:
         is_first_write = 0
-    with open(filePath, 'w', newline='', encoding='utf-8') as f:
+    with open(filePath, 'w' if is_first_write else 'a', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
+        print('开始写文件', filePath)
         if is_first_write:
             header = ['id', 'text', 'date', 'emotion']
             writer.writerow(header)
