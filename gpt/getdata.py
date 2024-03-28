@@ -2,6 +2,7 @@
 import os
 import pandas as pd
 
+# 有的数据因为带了敏感信息，导致无法获取的，需要进行手动加工，例如'qingang外长被免'
 
 path1 = '../结果文件/中国股市/'
 path2 = '../结果文件/A股/'

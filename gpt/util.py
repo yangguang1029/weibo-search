@@ -9,7 +9,7 @@ def writeCsv(filePath, data):
         is_first_write = 0
     with open(filePath, 'w' if is_first_write else 'a', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
-        print('开始写文件', filePath)
+        # print('开始写文件', filePath)
         if is_first_write:
             header = ['id', 'text', 'date', 'emotion']
             writer.writerow(header)
